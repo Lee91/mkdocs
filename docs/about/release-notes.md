@@ -11,7 +11,7 @@ To upgrade MkDocs to the latest version, use pip:
 You can determine your currently installed version using `mkdocs --version`:
 
     $ mkdocs --version
-    mkdocs, version 0.15.2
+    mkdocs, version 1.0 from /path/to/mkdocs (Python 3.6)
 
 ## Maintenance team
 
@@ -21,8 +21,364 @@ The current and past members of the MkDocs team.
 * [@d0ugal](https://github.com/d0ugal/)
 * [@waylan](https://github.com/waylan/)
 
-## Development Version
+## Version 1.1.2 (2020-05-14)
 
+* Bugfix: Normalize IP addresses and change unsupported address error to a
+  warning (#2108).
+
+## Version 1.1.1 (2020-05-12)
+
+* Bugfix: Allow compressed sitemap to be deterministic by supporting the
+  `SOURCE_DATE_EPOCH` environment variable (#2100).
+* Bugfix: Use `README.md` as `index.html` even if `use_directory_urls` is false
+  (#2081).
+* Bugfix: Ignore links which start with a backslash (#1680).
+* Bugfix: Pass `builder` to the `on_serve` event so that it can be passed to
+  `server.watch` by plugins (#1952).
+* Bugfix: Use `lunr[languages]==0.5.8` to avoid `nltk` incompatibilities (#2062).
+* Bugfix: Ensure wheel is Python 3 only (#2021).
+* Bugfix: Clean up `dev_addr` validation and disallow `0.0.0.0` (#2022).
+* Add support for `min_search_length` parameter for search plugin (#2014).
+* Bugfix: `readthedocs` theme `code` colors (#2027).
+
+## Version 1.1 (2020-02-22)
+
+### Major Additions to Version 1.1
+
+#### Support for Lunr.py as `prebuild_index` engine
+
+Mkdocs now supports prebuilding indices using [Lunr.py][lunrpy-docs], a pure
+Python implementation of Lunr.js, allowing the user to avoid installing a
+NodeJS environment if so desired. For more information please read the
+[`prebuild_index` documentation][prebuildindex-docs].
+
+[lunrpy-docs]: http://lunr.readthedocs.io/
+[prebuildindex-docs]: ../../user-guide/configuration/#prebuild_index
+
+#### `readthedocs` theme updated with upstream (#588 and #1374)
+
+The `readthedocs` theme now more closely matches the [upstream] Sphinx theme
+(version 0.4.1). A number of new theme configuration settings were added which
+mirror the upstream configuration options. See the [theme
+documentation][rtd-docs] for details.
+
+[upstream]: https://github.com/rtfd/sphinx_rtd_theme/
+[rtd-docs]: ../user-guide/styling-your-docs.md#readthedocs
+
+#### Update `mkdocs` theme to Bootswatch 4.1.3 (#1563)
+
+The `mkdocs` theme now supports all the features of [Bootswatch 4.1].
+Additionaly, 2 filenames were changed in this update. If you are using a theme
+which inherits from the `mkdocs` theme, the theme developer may need to update
+these filenames as follows.
+
+```text
+css/bootstrap-custom.min.css => css/bootstrap.min.css
+js/bootstrap-3.0.3.min.js => js/bootstrap.min.js
+```
+
+[Bootswatch 4.1]: https://getbootstrap.com/docs/4.1/getting-started/introduction/
+
+#### Improved configuration support on the command line (#1401)
+
+The `build`, `serve`, and `gh-deploy` subcommands now support flags to control
+whether [directory URLs][directory-urls] should be created:
+`--use-directory-urls` / `--no-directory-urls`. In addition, the `gh-deploy`
+subcommand now supports all the configuration options that `build` and `serve`
+do, adding `--strict`, `--theme`, `--theme-dir`, and `--site-dir`.
+
+[directory-urls]: ../user-guide/configuration.md#use_directory_urls
+
+#### Updated lunr-languages support (#1729)
+
+The `lunr-languages` plugin has been updated to 1.4.0, adding support for
+Arabic (`ar`) and Vietnamese (`vi`) languages. In addition, the Dutch and
+Japanese language codes have been changed to their standard values: `nl` and
+`ja`, respectively. The old language codes (`du` and `jp`) remain as aliases but
+may be removed in a future version of MkDocs.
+
+### Other Changes and Additions to Version 1.1
+
+* Bugfix: Ensure nested dot files in themes are ignored and document behavior (#1981).
+* Update minimum dependancy to Markdown 3.2.1.
+* Updated minimum dependancy to Jinja 2.10.1 to address security
+  concerns (#1780).
+* Update to lunr.js 2.3.8 (#1989).
+* Add support for Python 3.8.
+* Drop support for Python 3.4.
+* Drop support for Python 2.7. MkDocs is PY3 only now (#1926).
+* Bugfix: Select appropriate asyncio event loop on Windows for Python 3.8+ (#1885).
+* Bugfix: Ensure nested index pages do not get identified as the homepage (#1919).
+* Bugfix: Properly identify deployment version (#1879).
+* Bugfix: Properly build `ValidationError` message for `custom_dir` (#1849).
+* Bugfix: Exclude Markdown files and READMEs from theme (#1766).
+* Bugfix: Account for encoded URLs (#1670).
+* Bugfix: Ensure theme files do not override `docs_dir` files (#1671).
+* Bugfix: Do not normalize URL fragments (#1655).
+* Bugfix: Skip external URLs in sitemap.xml (#1742).
+* Bugfix: Ensure theme files do not override docs_dir files on Windows (#1876)
+* Add canonical tag to `readthedocs` theme (#1669).
+* Improved error message for when `git` is not available.
+* Add support for `nav_style` theme option for the `mkdocs` theme (#1930).
+* Bugfix: Long/nested dropdowns now behave more consistently for the `mkdocs`
+  theme (#1234).
+* Bugfix: Multi-row nav headers in the `mkdocs` theme no longer obscure the
+  document content (#716).
+* Add support for `navigation_depth` theme option for the `mkdocs` theme (#1970).
+* `level` attribute in `page.toc` items is now 1-indexed to match the level in
+  `<hN>` tags (#1970).
+
+## Version 1.0.4 (2018-09-07)
+
+* Bugfix: Ignore absolute links in Markdown (#1621).
+
+## Version 1.0.3 (2018-08-29)
+
+* Bugfix: Warn on relative paths in navigation (#1604).
+* Bugfix: Handle empty `theme_config.yml` files correctly (#1602).
+
+## Version 1.0.2 (2018-08-22)
+
+* Bugfix: Provide absolute `base_url` to error templates (#1598).
+
+## Version 1.0.1 (2018-08-13)
+
+* Bugfix: Prevent page reload when [Enter] is pressed in search box (#1589).
+* Bugfix: Avoid calling `search` until all assets are ready (#1584).
+* Bugfix: Exclude `README.md` if `index.md` is present (#1580).
+* Bugfix: Fix `readthedocs` theme navigation bug with homepage (#1576).
+
+## Version 1.0 (2018-08-03)
+
+### Major Additions to Version 1.0
+
+#### Internal Refactor of Pages, Files, and Navigation
+
+Internal handling of pages, files and navigation has been completely refactored.
+The changes included in the refactor are summarized below.
+
+* Support for hidden pages. All Markdown pages are now included in the build
+  regardless of whether they are included in the navigation configuration
+  (#699).
+* The navigation can now include links to external sites (#989 #1373 & #1406).
+* Page data (including titles) is properly determined for all pages before any
+  page is rendered (#1347).
+* Automatically populated navigation now sorts index pages to the top. In other
+  words, The index page will be listed as the first child of a directory, while
+  all other documents are sorted alphanumerically by file name after the index
+  page (#73 & #1042).
+* A `README.md` file is now treated as an index file within a directory and
+  will be rendered to `index.html` (#608).
+* The URLs for all files are computed once and stored in a files collection.
+  This ensures all internal links are always computed correctly regardless of
+  the configuration. This also allows all internal links to be validated, not
+  just links to other Markdown pages. (#842 & #872).
+* A new [url] template filter smartly ensures all URLs are relative to the
+  current page (#1526).
+* An [on_files] plugin event has been added, which could be used to include
+  files not in the `docs_dir`, exclude files, redefine page URLs (i.e.
+  implement extensionless URLs), or to manipulate files in various other ways.
+
+  [on_files]: ../user-guide/plugins.md#on_files
+
+##### Backward Incompatible Changes
+
+As part of the internal refactor, a number of backward incompatible changes have
+been introduced, which are summarized below.
+
+###### URLS have changed when `use_directory_urls` is `False`
+
+Previously, all Markdown pages would be have their filenames altered to be index
+pages regardless of how the [use_directory_urls] setting was configured.
+However, the path munging is only needed when `use_directory_urls` is set to
+`True` (the default). The path mungling no longer happens when
+`use_directory_urls` is set to `False`, which will result in different URLs for
+all pages that were not already index files. As this behavior only effects a
+non-default configuration, and the most common user-case for setting the option
+to `False` is for local file system (`file://`) browsing, its not likely to
+effect most users. However, if you have `use_directory_urls` set to `False`
+for a MkDocs site hosted on a web server, most of your URLs will now be broken.
+As you can see below, the new URLs are much more sensible.
+
+| Markdown file   | Old URL              | New URL        |
+| --------------- | -------------------- | -------------- |
+| `index.md`      | `index.html`         | `index.html`   |
+| `foo.md`        | `foo/index.html`     | `foo.html`     |
+| `foo/bar.md`    | `foo/bar/index.html` | `foo/bar.html` |
+
+Note that there has been no change to URLs or file paths when
+`use_directory_urls` is set to `True` (the default), except that MkDocs more
+consistently includes an ending slash on all internally generated URLs.
+
+[use_directory_urls]: ../user-guide/configuration.md#use_directory_urls
+
+###### The `pages` configuration setting has been renamed to `nav`
+
+The `pages` configuration setting is deprecated and will issue a warning if set
+in the configuration file. The setting has been renamed `nav`. To update your
+configuration, simply rename the setting to `nav`. In other words, if your
+configuration looked like this:
+
+```yaml
+pages:
+    - Home: index.md
+    - User Guide: user-guide.md
+```
+
+Simply edit the configuration as follows:
+
+```yaml
+nav:
+    - Home: index.md
+    - User Guide: user-guide.md
+```
+
+In the current release, any configuration which includes a `pages` setting, but
+no `nav` setting, the `pages` configuration will be copied to `nav` and a
+warning will be issued. However, in a future release, that may no longer happen.
+If both `pages` and `nav` are defined, the `pages` setting will be ignored.
+
+###### Template variables and `base_url`
+
+In previous versions of MkDocs some URLs expected the [base_url] template
+variable to be prepended to the URL and others did not. That inconsistency has
+been removed in that no URLs are modified before being added to the template
+context.
+
+For example, a theme template might have previously included a link to
+the `site_name` as:
+
+```django
+<a href="{{ nav.homepage.url }}">{{ config.site_name }}</a>
+```
+
+And MkDocs would magically return a URL for the homepage which was relative to
+the current page. That "magic" has been removed and the [url] template filter
+should be used:
+
+```django
+<a href="{{ nav.homepage.url|url }}">{{ config.site_name }}</a>
+```
+
+This change applies to any navigation items and pages, as well as the
+`page.next_page` and `page.previous_page` attributes. For the time being, the
+`extra_javascript` and `extra_css` variables continue to work as previously
+(without the `url` template filter), but they have been deprecated and the
+corresponding configuration values (`config.extra_javascript` and
+`config.extra_css` respectively) should be used with the filter instead.
+
+```django
+{% for path in config['extra_css'] %}
+    <link href="{{ path|url }}" rel="stylesheet">
+{% endfor %}
+```
+
+Note that navigation can now include links to external sites. Obviously, the
+`base_url` should not be prepended to these items. However, the `url` template
+filter is smart enough to recognize the URL is absolute and does not alter it.
+Therefore, all navigation items can be passed to the filter and only those that
+need to will be altered.
+
+```django
+{% for nav_item in nav %}
+    <a href="{{ nav_item.url|url }}">{{ nav_item.title }}</a>
+{% endfor %}
+```
+
+[base_url]: ../user-guide/custom-themes.md#base_url
+[url]: ../user-guide/custom-themes.md#url
+
+#### Path Based Settings are Relative to Configuration File (#543)
+
+Previously any relative paths in the various configuration options were
+resolved relative to the current working directory. They are now resolved
+relative to the configuration file. As the documentation has always encouraged
+running the various MkDocs commands from the directory that contains the
+configuration file (project root), this change will not affect most users.
+However, it will make it much easier to implement automated builds or otherwise
+run commands from a location other than the project root.
+
+Simply use the `-f/--config-file` option and point it at the configuration file:
+
+```sh
+mkdocs build --config-file /path/to/my/config/file.yml
+```
+
+As previously, if no file is specified, MkDocs looks for a file named
+`mkdocs.yml` in the current working directory.
+
+#### Added support for YAML Meta-Data (#1542)
+
+Previously, MkDocs only supported MultiMarkdown style meta-data, which does not
+recognize different data types and is rather limited. MkDocs now also supports
+YAML style meta-data in Markdown documents. MkDocs relies on the the presence or
+absence of the deliminators (`---` or `...`) to determine whether YAML style
+meta-data or MultiMarkdown style meta-data is being used.
+
+Previously MkDocs would recognize MultiMarkdown style meta-data between the
+deliminators. Now, if the deliminators are detected, but the content between the
+deliminators is not valid YAML meta-data, MkDocs does not attempt to parse the
+content as MultiMarkdown style meta-data. Therefore, MultiMarkdowns style
+meta-data must not include the deliminators. See the [MultiMarkdown style
+meta-data documentation] for details.
+
+Prior to version 0.17, MkDocs returned all meta-data values as a list of strings
+(even a single line would return a list of one string). In version 0.17, that
+behavior was changed to return each value as a single string (multiple lines
+were joined), which some users found limiting (see #1471). That behavior
+continues for MultiMarkdown style meta-data in the current version. However,
+YAML style meta-data supports the full range of "safe" YAML data types.
+Therefore, it is recommended that any complex meta-data make use of the YAML
+style (see the [YAML style meta-data documentation] for details). In fact, a
+future version of MkDocs may deprecate support for MultiMarkdown style
+meta-data.
+
+[MultiMarkdown style meta-data documentation]: ../user-guide/writing-your-docs.md#multimarkdown-style-meta-data
+[YAML style meta-data documentation]: ../user-guide/writing-your-docs.md#yaml-style-meta-data
+
+#### Refactor Search Plugin
+
+The search plugin has been completely refactored to include support for the
+following features:
+
+* Use a web worker in the browser with a fallback (#1396).
+* Optionally pre-build search index locally (#859 & #1061).
+* Upgrade to lunr.js 2.x (#1319).
+* Support search in languages other than English (#826).
+* Allow the user to define the word separators (#867).
+* Only run searches for queries of length > 2 (#1127).
+* Remove dependency on require.js (#1218).
+* Compress the search index (#1128).
+
+Users can review the [configuration options][search config] available and theme
+authors should review how [search and themes] interact.
+
+[search config]: ../user-guide/configuration.md#search
+[search and themes]: ../user-guide/custom-themes.md#search_and_themes
+
+#### `theme_dir` Configuration Option fully Deprecated
+
+As of version 0.17, the [custom_dir] option replaced the deprecated `theme_dir`
+option. If users had set the `theme_dir` option, MkDocs version 0.17 copied the
+value to the `theme.custom_dir` option and a warning was issued. As of version
+1.0, the value is no longer copied and an error is raised.
+
+### Other Changes and Additions to Version 1.0
+
+* Keyboard shortcuts changed to not conflict with commonly used accessibility
+  shortcuts (#1502.)
+* User friendly YAML parse errors (#1543).
+* Officially support Python 3.7.
+* A missing theme configuration file now raises an error.
+* Empty `extra_css` and `extra_javascript` settings no longer raise a warning.
+* Add highlight.js configuration settings to built-in themes (#1284).
+* Close search modal when result is selected (#1527).
+* Add a level attribute to AnchorLinks (#1272).
+* Add MkDocs version check to gh-deploy script (#640).
+* Improve Markdown extension error messages. (#782).
+* Drop official support for Python 3.3 and set `tornado>=5.0` (#1427).
+* Add support for GitLab edit links (#1435).
+* Link to GitHub issues from release notes (#644).
 * Expand {sha} and {version} in gh-deploy commit message (#1410).
 * Compress `sitemap.xml` (#1130).
 * Defer loading JS scripts (#1380).
@@ -39,6 +395,18 @@ The current and past members of the MkDocs team.
 * Remove PyPI Deployment Docs (#1360).
 * Update links to Python-Markdown library (#1360).
 * Document how to generate manpages for MkDocs commands (#686).
+
+## Version 0.17.5 (2018-07-06)
+
+* Bugfix: Fix Python 3.7 and PEP 479 incompatibility (#1518).
+
+## Version 0.17.4 (2018-06-08)
+
+* Bugfix: Add multi-level nesting support to sitemap.xml (#1482).
+
+## Version 0.17.3 (2018-03-07)
+
+* Bugfix: Set dependency `tornado>=4.1,<5.0` due to changes in 5.0 (#1428).
 
 ## Version 0.17.2 (2017-11-15)
 
@@ -79,7 +447,7 @@ Support had been added to provide theme specific customizations. Theme authors
 can define default options as documented in [Theme Configuration]. A theme can
 now inherit from another theme, define various static templates to be rendered,
 and define arbitrary default variables to control behavior in the templates.
-The theme configuration is defined in a configuruation file named
+The theme configuration is defined in a configuration file named
 `mkdocs_theme.yml` which should be placed at the root of your template files. A
 warning will be raised if no configuration file is found and an error will be
 raised in a future release.
@@ -125,7 +493,7 @@ template exists.
 ##### Context Variables
 
 Page specific variable names in the template context have been refactored as
-defined in [Custom Themes](../user-guide/custom-themes/#page). The
+defined in [Custom Themes](../user-guide/custom-themes.md#page). The
 old variable names issued a warning in version 0.16, but have been removed in
 version 1.0.
 
@@ -143,14 +511,14 @@ user created and third-party templates:
 | previous_page     | [page.previous_page]|
 | next_page         | [page.next_page]    |
 
-[page]: ../user-guide/custom-themes/#page
-[page.title]: ../user-guide/custom-themes/#pagetitle
-[page.content]: ../user-guide/custom-themes/#pagecontent
-[page.toc]: ../user-guide/custom-themes/#pagetoc
-[page.meta]: ../user-guide/custom-themes/#pagemeta
-[page.canonical_url]: ../user-guide/custom-themes/#pagecanonical_url
-[page.previous_page]: ../user-guide/custom-themes/#pageprevious_page
-[page.next_page]: ../user-guide/custom-themes/#pagenext_page
+[page]: ../user-guide/custom-themes.md#page
+[page.title]: ../user-guide/custom-themes.md#pagetitle
+[page.content]: ../user-guide/custom-themes.md#pagecontent
+[page.toc]: ../user-guide/custom-themes.md#pagetoc
+[page.meta]: ../user-guide/custom-themes.md#pagemeta
+[page.canonical_url]: ../user-guide/custom-themes.md#pagecanonical_url
+[page.previous_page]: ../user-guide/custom-themes.md#pageprevious_page
+[page.next_page]: ../user-guide/custom-themes.md#pagenext_page
 
 Additionally, a number of global variables have been altered and/or removed
 and user created and third-party templates should be updated as outlined below:
@@ -176,7 +544,7 @@ and user created and third-party templates should be updated as outlined below:
 In previous versions of MkDocs, if the `extra_css` or `extra_javascript` config
 settings were empty, MkDocs would scan the `docs_dir` and auto-populate each
 setting with all of the CSS and JavaScript files found. On version 0.16 this
-behavior was deprecated and a warning was issued. In 1.0 any unlisted CSS and
+behavior was deprecated and a warning was issued. In 0.17 any unlisted CSS and
 JavaScript files will not be included in the HTML templates, however, a warning
 will be issued. In other words, they will still be copied to the `site-dir`, but
 they will not have any effect on the theme if they are not explicitly listed.
@@ -230,7 +598,7 @@ the `extra_css` or `extra_javascript` config settings going forward.
 ##### Page Context
 
 Page specific variable names in the template context have been refactored as
-defined in [Custom Themes](../user-guide/custom-themes/#page). The
+defined in [Custom Themes](../user-guide/custom-themes.md#page). The
 old variable names will issue a warning but continue to work for version 0.16,
 but may be removed in a future version.
 
@@ -248,14 +616,14 @@ user created and third-party templates:
 | previous_page     | [page.previous_page]|
 | next_page         | [page.next_page]    |
 
-[page]: ../user-guide/custom-themes/#page
-[page.title]: ../user-guide/custom-themes/#pagetitle
-[page.content]: ../user-guide/custom-themes/#pagecontent
-[page.toc]: ../user-guide/custom-themes/#pagetoc
-[page.meta]: ../user-guide/custom-themes/#pagemeta
-[page.canonical_url]: ../user-guide/custom-themes/#pagecanonical_url
-[page.previous_page]: ../user-guide/custom-themes/#pageprevious_page
-[page.next_page]: ../user-guide/custom-themes/#pagenext_page
+[page]: ../user-guide/custom-themes.md#page
+[page.title]: ../user-guide/custom-themes.md#pagetitle
+[page.content]: ../user-guide/custom-themes.md#pagecontent
+[page.toc]: ../user-guide/custom-themes.md#pagetoc
+[page.meta]: ../user-guide/custom-themes.md#pagemeta
+[page.canonical_url]: ../user-guide/custom-themes.md#pagecanonical_url
+[page.previous_page]: ../user-guide/custom-themes.md#pageprevious_page
+[page.next_page]: ../user-guide/custom-themes.md#pagenext_page
 
 ##### Global Context
 
@@ -344,7 +712,7 @@ overriding blocks in the same manner as the built-in themes. Third party themes
 are encouraged to wrap the various pieces of their templates in blocks in order
 to support such customization.
 
-[blocks]: ../user-guide/styling-your-docs/#overriding-template-blocks
+[blocks]: ../user-guide/styling-your-docs.md#overriding-template-blocks
 
 #### Auto-Populated `extra_css` and `extra_javascript` Deprecated. (#986)
 
@@ -388,7 +756,7 @@ the `docs_dir` is set to the directory which contains your config file rather
 than a child directory. You will need to rearrange you directory structure to
 better conform with the documented [layout].
 
-[layout]: ../user-guide/writing-your-docs/#file-layout
+[layout]: ../user-guide/writing-your-docs.md#file-layout
 
 ### Other Changes and Additions to Version 0.16.0
 
@@ -455,8 +823,8 @@ details about these specific themes.
 * [MkDocs Bootstrap]
 * [MkDocs Bootswatch]
 
-[MkDocs Bootstrap]: http://mkdocs.github.io/mkdocs-bootstrap/
-[MkDocs Bootswatch]: http://mkdocs.github.io/mkdocs-bootswatch/
+[MkDocs Bootstrap]: https://mkdocs.github.io/mkdocs-bootstrap/
+[MkDocs Bootswatch]: https://mkdocs.github.io/mkdocs-bootswatch/
 
 They will be included with MkDocs by default until a future release. After that
 they will be installable with pip: `pip install mkdocs-bootstrap` and `pip
@@ -466,8 +834,8 @@ See the documentation for [Styling your docs] for more information about using
 and customizing themes and [Custom themes] for creating and distributing new
 themes
 
-[Styling your docs]: /user-guide/styling-your-docs.md
-[Custom themes]: /user-guide/custom-themes.md
+[Styling your docs]: ../user-guide/styling-your-docs.md
+[Custom themes]: ../user-guide/custom-themes.md
 
 ### Other Changes and Additions to Version 0.15.0
 
@@ -488,9 +856,9 @@ themes
 * Bugfix: Provide filename to Read the Docs. (#721 and RTD#1480)
 * Bugfix: Silence Click's unicode_literals warning. (#708)
 
-[site_description]: /user-guide/configuration.md#site_description
-[site_author]: /user-guide/configuration.md#site_author
-[ReadTheDocs]: /user-guide/styling-your-docs.md#readthedocs
+[site_description]: ../user-guide/configuration.md#site_description
+[site_author]: ../user-guide/configuration.md#site_author
+[ReadTheDocs]: ../user-guide/styling-your-docs.md#readthedocs
 
 ## Version 0.14.0 (2015-06-09)
 
@@ -548,7 +916,7 @@ This new file is created on every MkDocs build (with `mkdocs build`) and
 no configuration is needed to enable it.
 
 [future release]: https://github.com/mkdocs/mkdocs/pull/481
-[site_dir]: /user-guide/configuration.md#site_dir
+[site_dir]: ../user-guide/configuration.md#site_dir
 
 #### Change the pages configuration
 
@@ -556,8 +924,8 @@ Provide a [new way] to define pages, and specifically [nested pages], in the
 mkdocs.yml file and deprecate the existing approach, support will be removed
 with MkDocs 1.0.
 
-[new way]: /user-guide/writing-your-docs.md#configure-pages-and-navigation
-[nested pages]: /user-guide/writing-your-docs.md#multilevel-documentation
+[new way]: ../user-guide/writing-your-docs.md#configure-pages-and-navigation
+[nested pages]: ../user-guide/writing-your-docs.md#multilevel-documentation
 
 #### Warn users about the removal of builtin themes
 
@@ -574,8 +942,8 @@ JavaScript library [lunr.js]. It has been added to both the `mkdocs` and
 `readthedocs` themes. See the custom theme documentation on [supporting search]
 for adding it to your own themes.
 
-[lunr.js]: http://lunrjs.com/
-[supporting search]: /user-guide/styling-your-docs.md#search-and-themes
+[lunr.js]: https://lunrjs.com/
+[supporting search]: ../user-guide/styling-your-docs.md#search-and-themes
 
 #### New Command Line Interface
 
@@ -603,10 +971,10 @@ can also use Jinja2 syntax and take advantage of the [global variables].
 By default MkDocs will use this approach to create a sitemap for the
 documentation.
 
-[extra_javascript]: /user-guide/configuration.md#extra_javascript
-[extra_css]: /user-guide/configuration.md#extra_css
-[extra_templates]: /user-guide/configuration.md#extra_templates
-[global variables]: /user-guide/styling-your-docs.md#global-context
+[extra_javascript]: ../user-guide/configuration.md#extra_javascript
+[extra_css]: ../user-guide/configuration.md#extra_css
+[extra_templates]: ../user-guide/configuration.md#extra_templates
+[global variables]: ../user-guide/styling-your-docs.md#global-context
 
 ### Other Changes and Additions to Version 0.13.0
 
@@ -623,9 +991,9 @@ documentation.
   called index.md (#535)
 * Bugfix: Fix errors with Unicode filenames (#542).
 
-[extra config]: /user-guide/configuration.md#extra
-[Markdown extension configuration options]: /user-guide/configuration.md#markdown_extensions
-[wheels]: http://pythonwheels.com/
+[extra config]: ../user-guide/configuration.md#extra
+[Markdown extension configuration options]: ../user-guide/configuration.md#markdown_extensions
+[wheels]: https://pythonwheels.com/
 
 ## Version 0.12.2 (2015-04-22)
 

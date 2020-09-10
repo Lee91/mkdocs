@@ -35,7 +35,8 @@ URL to the generated HTML header.
 
 ### repo_url
 
-When set, provides a link to your GitHub or Bitbucket repository on each page.
+When set, provides a link to your repository (GitHub, Bitbucket, GitLab, ...)
+on each page.
 
 ```yaml
 repo_url: https://github.com/example/repository/
@@ -45,10 +46,10 @@ repo_url: https://github.com/example/repository/
 
 ### repo_name
 
-When set, provides a link to your GitHub or Bitbucket repository on each page.
+When set, provides the name for the link to your repository on each page.
 
-**default**: `'GitHub'` or `'Bitbucket'` if the `repo_url` matches those
-domains, otherwise `null`
+**default**: `'GitHub'`, `'Bitbucket'` or `'GitLab'` if the `repo_url` matches
+those domains, otherwise the hostname from the `repo_url`.
 
 ### edit_uri
 
@@ -86,14 +87,14 @@ edit_uri: root/path/docs/
 ```
 
 !!! note
-    On a few known hosts (specifically GitHub and Bitbucket), the `edit_uri` is
-    derived from the 'repo_url' and does not need to be set manually. Simply
-    defining a `repo_url` will automatically populate the `edit_uri` config
-    setting.
+    On a few known hosts (specifically GitHub, Bitbucket and GitLab), the
+    `edit_uri` is derived from the 'repo_url' and does not need to be set
+    manually. Simply defining a `repo_url` will automatically populate the
+    `edit_uri` configs setting.
 
-    For example, for a GitHub-hosted repository, the `edit_uri` would be
-    automatically set as `edit/master/docs/` (Note the `edit` path and `master`
-    branch).
+    For example, for a GitHub- or GitLab-hosted repository, the `edit_uri`
+    would be automatically set as `edit/master/docs/` (Note the `edit` path
+    and `master` branch).
 
     For a Bitbucket-hosted repository, the equivalent `edit_uri` would be
     automatically set as `src/default/docs/` (note the `src` path and `default`
@@ -105,15 +106,16 @@ edit_uri: root/path/docs/
     string to disable the automatic setting.
 
 !!! warning
-    On GitHub, the default "edit" path (`edit/master/docs/`) opens the page in
-    the online GitHub editor. This functionality requires that the user have and
-    be logged in to a GitHub account. Otherwise, the user will be redirected to
-    a login/signup page. Alternatively, use the "blob" path
+    On GitHub and GitLab, the default "edit" path (`edit/master/docs/`) opens
+    the page in the online editor. This functionality requires that the user
+    have and be logged in to a GitHub/GitLab account. Otherwise, the user will
+    be redirected to a login/signup page. Alternatively, use the "blob" path
     (`blob/master/docs/`) to open a read-only view, which supports anonymous
     access.
 
-**default**: `edit/master/docs/` or `src/default/docs/` for GitHub or Bitbucket
-repos, respectively, if `repo_url` matches those domains, otherwise `null`
+**default**: `edit/master/docs/` for GitHub and GitLab repos or
+`src/default/docs/` for a Bitbucket repo, if `repo_url` matches those domains,
+otherwise `null`
 
 ### site_description
 
@@ -160,26 +162,61 @@ This option can be overridden by a command line option in `gh-deploy`.
 
 ## Documentation layout
 
-### pages
+### nav
 
-This setting is used to determine the set of pages that should be built for the
-documentation. For example, the following would create Introduction, User Guide
-and About pages, given the three source files `index.md`, `user-guide.md` and
-`about.md`, respectively.
+This setting is used to determine the format and layout of the global navigation
+for the site. A minimal navigation configuration could look like this:
 
 ```yaml
-pages:
-    - 'Introduction': 'index.md'
-    - 'User Guide': 'user-guide.md'
-    - 'About': 'about.md'
+nav:
+    - 'index.md'
+    - 'about.md'
 ```
 
-See the section on [configuring pages and navigation] for a more detailed
-breakdown, including how to create sub-sections.
+All paths must be relative to the `mkdocs.yml` configuration file. See the
+section on [configuring pages and navigation] for a more detailed breakdown,
+including how to create sub-sections.
 
-**default**: By default `pages` will contain an alphanumerically sorted, nested
+Navigation items may also include links to external sites. While titles are
+optional for internal links, they are required for external links. An external
+link may be a full URL or a relative URL. Any path which is not found in the
+files is assumed to be an external link. See the section about [Meta-Data] on
+how MkDocs determines the page title of a document.
+
+```yaml
+nav:
+    - Introduction: 'index.md'
+    - 'about.md'
+    - 'Issue Tracker': 'https://example.com/'
+```
+
+In the above example, the first two items point to local files while the third
+points to an external site.
+
+However, sometimes the MkDocs site is hosted in a subdirectory of a project's
+site and you may want to link to other parts of the same site without including
+the full domain. In that case, you may use an appropriate relative URL.
+
+```yaml
+site_url: https://example.com/foo/
+
+nav:
+    - Home: '../'
+    - 'User Guide': 'user-guide.md'
+    - 'Bug Tracker': '/bugs/'
+```
+
+In the above example, two different styles of external links are used. First
+note that the `site_url` indicates that the MkDocs site is hosted in the `/foo/`
+subdirectory of the domain. Therefore, the `Home` navigation item is a relative
+link which steps up one level to the server root and effectively points to
+`https://example.com/`. The `Bug Tracker` item uses an absolute path from the
+server root and effectively points to `https://example.com/bugs/`. Of course, the
+`User Guide` points to a local MkDocs page.
+
+**default**: By default `nav` will contain an alphanumerically sorted, nested
 list of all the Markdown files found within the `docs_dir` and its
-sub-directories. If none are found it will be `[]` (an empty list).
+sub-directories. Index files will always be listed first within a sub-section.
 
 ## Build directories
 
@@ -213,9 +250,10 @@ If a set of key/value pairs, the following nested keys can be defined:
 
     #### custom_dir:
 
-    A directory to custom a theme. This can either be a relative directory, in
-    which case it is resolved relative to the directory containing your
-    configuration file, or it can be an absolute directory path.
+    A directory containing a custom theme. This can either be a relative
+    directory, in which case it is resolved relative to the directory containing
+    your configuration file, or it can be an absolute directory path from the
+    root of your local file system.
 
     See [styling your docs][theme_dir] for details if you would like to tweak an
     existing theme.
@@ -238,19 +276,19 @@ If a set of key/value pairs, the following nested keys can be defined:
 
 ### docs_dir
 
-Lets you set the directory containing the documentation source markdown files.
-This can either be a relative directory, in which case it is resolved relative
-to the directory containing your configuration file, or it can be an absolute
-directory path from the root of your local file system.
+The directory containing the documentation source markdown files. This can
+either be a relative directory, in which case it is resolved relative to the
+directory containing your configuration file, or it can be an absolute directory
+path from the root of your local file system.
 
 **default**: `'docs'`
 
 ### site_dir
 
-Lets you set the directory where the output HTML and other files are created.
-This can either be a relative directory, in which case it is resolved relative
-to the directory containing your configuration file, or it can be an absolute
-directory path from the root of your local file system.
+The directory where the output HTML and other files are created. This can either
+be a relative directory, in which case it is resolved relative to the directory
+containing your configuration file, or it can be an absolute directory path from
+the root of your local file system.
 
 **default**: `'site'`
 
@@ -321,27 +359,26 @@ documentation.
 The following table demonstrates how the URLs used on the site differ when
 setting `use_directory_urls` to `true` or `false`.
 
-Source file  | Generated HTML       | use_directory_urls: true  | use_directory_urls: false
------------- | -------------------- | ------------------------ | ------------------------
-index.md     | index.html           | /                        | /index.html
-api-guide.md | api-guide/index.html | /api-guide/              | /api-guide/index.html
-about.md     | about/index.html     | /about/                  | /about/index.html
+Source file      | use_directory_urls: true  | use_directory_urls: false
+---------------- | ------------------------- | -------------------------
+index.md         | /                         | /index.html
+api-guide.md     | /api-guide/               | /api-guide.html
+about/license.md | /about/license/           | /about/license.html
 
 The default style of `use_directory_urls: true` creates more user friendly URLs,
 and is usually what you'll want to use.
 
 The alternate style can occasionally be useful if you want your documentation to
 remain properly linked when opening pages directly from the file system, because
-it create links that point directly to the target *file* rather than the target
+it creates links that point directly to the target *file* rather than the target
 *directory*.
 
 **default**: `true`
 
 ### strict
 
-Determines if a broken link to a page within the documentation is considered a
-warning or an error (link to a page not listed in the pages setting). Set to
-true to halt processing when a broken link is found, false prints a warning.
+Determines how warnings are handled. Set to `true` to halt processing when a
+warning is raised. Set to `false` to print a warning and continue processing.
 
 **default**: `false`
 
@@ -351,7 +388,7 @@ Determines the address used when running `mkdocs serve`. Must be of the format
 `IP:PORT`.
 
 Allows a custom default to be set without the need to pass it through the
-`--dev_addr` option every time the `mkdocs serve` command is called.
+`--dev-addr` option every time the `mkdocs serve` command is called.
 
 **default**: `'127.0.0.1:8000'`
 
@@ -445,6 +482,115 @@ plugins: []
 
 **default**: `['search']` (the "search" plugin included with MkDocs).
 
+#### Search
+
+A search plugin is provided by default with MkDocs which uses [lunr.js] as a
+search engine. The following config options are available to alter the behavior
+of the search plugin:
+
+##### **separator**
+
+A regular expression which matches the characters used as word separators when
+building the index. By default whitespace and the hyphen (`-`) are used. To add
+the dot (`.`) as a word separator you might do this:
+
+```yaml
+plugins:
+    - search:
+        separator: '[\s\-\.]+'
+```
+
+  **default**: `'[\s\-]+'`
+
+##### **min_search_length**
+
+An integer value that defines the minimum length for a search query. By default
+searches shorter than 3 chars in length are ignored as search result quality with
+short search terms is poor. However, for some use cases (such as documentation
+about Message Queues which might generate searches for 'MQ') it may be preferable
+to set a shorter limit.
+
+```yaml
+plugins:
+    - search:
+        min_search_length: 2
+```
+
+  **default**: 3
+
+##### **lang**
+
+A list of languages to use when building the search index as identified by their
+[ISO 639-1] language codes. With [Lunr Languages], the following languages are
+supported:
+
+* `ar`: Arabic
+* `da`: Danish
+* `nl`: Dutch
+* `en`: English
+* `fi`: Finnish
+* `fr`: French
+* `de`: German
+* `hu`: Hungarian
+* `it`: Italian
+* `ja`: Japanese
+* `no`: Norwegian
+* `pt`: Portuguese
+* `ro`: Romanian
+* `ru`: Russian
+* `es`: Spanish
+* `sv`: Swedish
+* `th`: Thai
+* `tr`: Turkish
+* `vi`: Vietnamese
+
+You may [contribute additional languages].
+
+!!! Warning
+
+    While search does support using multiple languages together, it is best not
+    to add additional languages unless you really need them. Each additional
+    language adds significant bandwidth requirements and uses more browser
+    resources. Generally it is best to keep each instance of MkDocs to a single
+    language.
+
+!!! Note
+
+    Lunr Languages does not currently include support for Chinese or other Asian
+    languages. However, some users have reported decent results using Japanese.
+
+**default**: `['en']`
+
+##### **prebuild_index**
+
+Optionally generates a pre-built index of all pages, which provides some
+performance improvements for larger sites. Before enabling, check that the
+theme you are using explicitly supports using a prebuilt index (the builtin
+themes do).
+
+There are two options for prebuilding the index:
+
+Using [Node.js] setting `prebuild_index` to `True` or `node`. This option
+requires that Node.js be installed and the command `node` be on the system
+path. If this feature is enabled and fails for any reason, a warning is issued.
+You may use the `--strict` flag when building to cause such a failure to raise
+an error instead.
+
+Using [Lunr.py] setting `prebuild_index` to `python`. Lunr.py is installed
+as part of mkdocs and guarantees compatibility with Lunr.js even on languages
+other than english. If you find substantial inconsistencies or problems please
+report it on [Lunr.py's issues] and fall back to the Node.js version.
+
+!!! Note
+
+    On smaller sites, using a pre-built index is not recommended as it creates a
+    significant increase is bandwidth requirements with little to no noticeable
+    improvement to your users. However, for larger sites (hundreds of pages),
+    the bandwidth increase is relatively small and your users will notice a
+    significant improvement in search performance.
+
+**default**: `False`
+
 [custom themes]: custom-themes.md
 [variables that are available]: custom-themes.md#template-variables
 [pymdk-extensions]: https://python-markdown.github.io/extensions/
@@ -457,3 +603,10 @@ plugins: []
 [styling your docs]: styling-your-docs.md
 [extra_css]: #extra_css
 [Plugins]: plugins.md
+[lunr.js]: https://lunrjs.com/
+[ISO 639-1]: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+[Lunr Languages]: https://github.com/MihaiValentin/lunr-languages#lunr-languages-----
+[contribute additional languages]: https://github.com/MihaiValentin/lunr-languages/blob/master/CONTRIBUTING.md
+[Node.js]: https://nodejs.org/
+[Lunr.py]: http://lunr.readthedocs.io/
+[Lunr.py's issues]: https://github.com/yeraydiazdiaz/lunr.py/issues

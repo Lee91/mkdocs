@@ -1,6 +1,8 @@
-from __future__ import unicode_literals
 import logging
 import os
+import sys
+from yaml import YAMLError
+from collections import UserDict
 
 from mkdocs import exceptions
 from mkdocs import utils
@@ -13,7 +15,7 @@ class ValidationError(Exception):
     """Raised during the validation process of the config on errors."""
 
 
-class Config(utils.UserDict):
+class Config(UserDict):
     """
     MkDocs Configuration dict
 
@@ -21,13 +23,21 @@ class Config(utils.UserDict):
     for running validation on the structure and contents.
     """
 
-    def __init__(self, schema):
+    def __init__(self, schema, config_file_path=None):
         """
         The schema is a Python dict which maps the config name to a validator.
         """
 
         self._schema = schema
         self._schema_keys = set(dict(schema).keys())
+        # Ensure config_file_path is a Unicode string
+        if config_file_path is not None and not isinstance(config_file_path, str):
+            try:
+                # Assume config_file_path is encoded with the file system encoding.
+                config_file_path = config_file_path.decode(encoding=sys.getfilesystemencoding())
+            except UnicodeDecodeError:
+                raise ValidationError("config_file_path is not a Unicode string.")
+        self.config_file_path = config_file_path
         self.data = {}
 
         self.user_configs = []
@@ -57,7 +67,7 @@ class Config(utils.UserDict):
 
         for key in (set(self.keys()) - self._schema_keys):
             warnings.append((
-                key, "Unrecognised configuration name: {0}".format(key)
+                key, "Unrecognised configuration name: {}".format(key)
             ))
 
         return failed, warnings
@@ -114,13 +124,19 @@ class Config(utils.UserDict):
             raise exceptions.ConfigurationError(
                 "The configuration is invalid. The expected type was a key "
                 "value mapping (a python dict) but we got an object of type: "
-                "{0}".format(type(patch)))
+                "{}".format(type(patch)))
 
         self.user_configs.append(patch)
         self.data.update(patch)
 
     def load_file(self, config_file):
-        return self.load_dict(utils.yaml_load(config_file))
+        try:
+            return self.load_dict(utils.yaml_load(config_file))
+        except YAMLError as e:
+            # MkDocs knows and understands ConfigurationErrors
+            raise exceptions.ConfigurationError(
+                "MkDocs encountered as error parsing the configuration file: {}".format(e)
+            )
 
 
 def _open_config_file(config_file):
@@ -133,15 +149,15 @@ def _open_config_file(config_file):
     if hasattr(config_file, 'closed') and config_file.closed:
         config_file = config_file.name
 
-    log.debug("Loading configuration file: {0}".format(config_file))
+    log.debug("Loading configuration file: {}".format(config_file))
 
     # If it is a string, we can assume it is a path and attempt to open it.
-    if isinstance(config_file, utils.string_types):
+    if isinstance(config_file, str):
         if os.path.exists(config_file):
             config_file = open(config_file, 'rb')
         else:
             raise exceptions.ConfigurationError(
-                "Config file '{0}' does not exist.".format(config_file))
+                "Config file '{}' does not exist.".format(config_file))
 
     # Ensure file descriptor is at begining
     config_file.seek(0)
@@ -172,7 +188,7 @@ def load_config(config_file=None, **kwargs):
 
     # Initialise the config with the default schema .
     from mkdocs import config
-    cfg = Config(schema=config.DEFAULT_SCHEMA)
+    cfg = Config(schema=config.DEFAULT_SCHEMA, config_file_path=options['config_file_path'])
     # First load the config file
     cfg.load_file(config_file)
     # Then load the options to overwrite anything in the config.
@@ -191,11 +207,11 @@ def load_config(config_file=None, **kwargs):
 
     if len(errors) > 0:
         raise exceptions.ConfigurationError(
-            "Aborted with {0} Configuration Errors!".format(len(errors))
+            "Aborted with {} Configuration Errors!".format(len(errors))
         )
     elif cfg['strict'] and len(warnings) > 0:
         raise exceptions.ConfigurationError(
-            "Aborted with {0} Configuration Warnings in 'strict' mode!".format(len(warnings))
+            "Aborted with {} Configuration Warnings in 'strict' mode!".format(len(warnings))
         )
 
     return cfg

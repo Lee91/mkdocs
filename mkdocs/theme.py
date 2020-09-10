@@ -1,6 +1,3 @@
-# coding: utf-8
-
-from __future__ import unicode_literals
 import os
 import jinja2
 import logging
@@ -10,9 +7,10 @@ from mkdocs.utils import filters
 from mkdocs.config.base import ValidationError
 
 log = logging.getLogger(__name__)
+log.addFilter(utils.warning_filter)
 
 
-class Theme(object):
+class Theme:
     """
     A Theme object.
 
@@ -54,9 +52,9 @@ class Theme(object):
         self._vars.update(user_config)
 
     def __repr__(self):
-        return "{0}(name='{1}', dirs={2}, static_templates={3}, {4})".format(
+        return "{}(name='{}', dirs={}, static_templates={}, {})".format(
             self.__class__.__name__, self.name, self.dirs, list(self.static_templates),
-            ', '.join('{0}={1}'.format(k, repr(v)) for k, v in self._vars.items())
+            ', '.join('{}={}'.format(k, repr(v)) for k, v in self._vars.items())
         )
 
     def __getitem__(self, key):
@@ -81,14 +79,14 @@ class Theme(object):
             file_path = os.path.join(theme_dir, 'mkdocs_theme.yml')
             with open(file_path, 'rb') as f:
                 theme_config = utils.yaml_load(f)
-        except IOError as e:
+                if theme_config is None:
+                    theme_config = {}
+        except OSError as e:
             log.debug(e)
-            # TODO: Change this warning to an error in a future version
-            log.warning(
-                "The theme '{0}' does not appear to have a configuration file. "
+            raise ValidationError(
+                "The theme '{}' does not appear to have a configuration file. "
                 "Please upgrade to a current version of the theme.".format(name)
             )
-            return
 
         log.debug("Loaded theme configuration for '%s' from '%s': %s", name, file_path, theme_config)
 
@@ -97,8 +95,8 @@ class Theme(object):
             themes = utils.get_theme_names()
             if parent_theme not in themes:
                 raise ValidationError(
-                    "The theme '{0}' inherits from '{1}', which does not appear to be installed. "
-                    "The available installed themes are: {2}".format(name, parent_theme, ', '.join(themes))
+                    "The theme '{}' inherits from '{}', which does not appear to be installed. "
+                    "The available installed themes are: {}".format(name, parent_theme, ', '.join(themes))
                 )
             self._load_theme_config(parent_theme)
 
@@ -111,4 +109,5 @@ class Theme(object):
         loader = jinja2.FileSystemLoader(self.dirs)
         env = jinja2.Environment(loader=loader)
         env.filters['tojson'] = filters.tojson
+        env.filters['url'] = filters.url_filter
         return env

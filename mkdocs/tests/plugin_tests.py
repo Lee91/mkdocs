@@ -1,46 +1,62 @@
 #!/usr/bin/env python
-# coding: utf-8
 
-from __future__ import unicode_literals
 
 import unittest
-import mock
+from unittest import mock
+import os
 
 from mkdocs import plugins
-from mkdocs import utils
 from mkdocs import config
 
 
 class DummyPlugin(plugins.BasePlugin):
     config_scheme = (
-        ('foo', config.config_options.Type(utils.string_types, default='default foo')),
-        ('bar', config.config_options.Type(int, default=0))
+        ('foo', config.config_options.Type(str, default='default foo')),
+        ('bar', config.config_options.Type(int, default=0)),
+        ('dir', config.config_options.Dir(exists=False)),
     )
 
     def on_pre_page(self, content, **kwargs):
-        """ prepend `foo` config value to page content. """
-        return ' '.join((self.config['foo'], content))
+        """ modify page content by prepending `foo` config value. """
+        return '{} {}'.format(self.config['foo'], content)
 
     def on_nav(self, item, **kwargs):
         """ do nothing (return None) to not modify item. """
+        return None
+
+    def on_page_read_source(self, **kwargs):
+        """ create new source by prepending `foo` config value to 'source'. """
+        return '{} {}'.format(self.config['foo'], 'source')
+
+    def on_pre_build(self, **kwargs):
+        """ do nothing (return None). """
         return None
 
 
 class TestPluginClass(unittest.TestCase):
 
     def test_valid_plugin_options(self):
+        test_dir = 'test'
 
         options = {
-            'foo': 'some value'
+            'foo': 'some value',
+            'dir': test_dir,
         }
+
+        cfg_fname = os.path.join('tmp', 'test', 'fname.yml')
+        cfg_fname = os.path.abspath(cfg_fname)
+
+        cfg_dirname = os.path.dirname(cfg_fname)
+        expected = os.path.join(cfg_dirname, test_dir)
 
         expected = {
             'foo': 'some value',
-            'bar': 0
+            'bar': 0,
+            'dir': expected,
         }
 
         plugin = DummyPlugin()
-        errors, warnings = plugin.load_config(options)
+        errors, warnings = plugin.load_config(options, config_file_path=cfg_fname)
         self.assertEqual(plugin.config, expected)
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
@@ -105,6 +121,20 @@ class TestPluginCollection(unittest.TestCase):
         collection['foo'] = plugin
         self.assertEqual(collection.run_event('nav', 'nav item'), 'nav item')
 
+    def test_event_empty_item(self):
+        collection = plugins.PluginCollection()
+        plugin = DummyPlugin()
+        plugin.load_config({'foo': 'new'})
+        collection['foo'] = plugin
+        self.assertEqual(collection.run_event('page_read_source'), 'new source')
+
+    def test_event_empty_item_returns_None(self):
+        collection = plugins.PluginCollection()
+        plugin = DummyPlugin()
+        plugin.load_config({'foo': 'new'})
+        collection['foo'] = plugin
+        self.assertEqual(collection.run_event('pre_build'), None)
+
     def test_run_undefined_event_on_collection(self):
         collection = plugins.PluginCollection()
         self.assertEqual(collection.run_event('pre_page', 'page content'), 'page content')
@@ -132,7 +162,8 @@ class TestPluginConfig(unittest.TestCase):
         self.assertIsInstance(cfg['plugins']['sample'], plugins.BasePlugin)
         expected = {
             'foo': 'default foo',
-            'bar': 0
+            'bar': 0,
+            'dir': None,
         }
         self.assertEqual(cfg['plugins']['sample'].config, expected)
 
@@ -154,7 +185,8 @@ class TestPluginConfig(unittest.TestCase):
         self.assertIsInstance(cfg['plugins']['sample'], plugins.BasePlugin)
         expected = {
             'foo': 'foo value',
-            'bar': 42
+            'bar': 42,
+            'dir': None,
         }
         self.assertEqual(cfg['plugins']['sample'].config, expected)
 
@@ -194,7 +226,8 @@ class TestPluginConfig(unittest.TestCase):
         self.assertIsInstance(cfg['plugins']['sample'], plugins.BasePlugin)
         expected = {
             'foo': 'default foo',
-            'bar': 0
+            'bar': 0,
+            'dir': None,
         }
         self.assertEqual(cfg['plugins']['sample'].config, expected)
 

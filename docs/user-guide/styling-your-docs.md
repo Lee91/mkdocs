@@ -6,9 +6,8 @@ How to style and theme your documentation.
 
 MkDocs includes a couple [built-in themes] as well as various [third party
 themes], all of which can easily be customized with [extra CSS or
-JavaScript][docs_dir] or overridden from the [theme directory][theme_dir]. You
-can also create your own [custom theme] from the ground up for your
-documentation.
+JavaScript][docs_dir] or overridden from the theme's [custom_dir]. You can also
+create your own [custom theme] from the ground up for your documentation.
 
 To use a theme that is included in MkDocs, simply add this to your
 `mkdocs.yml` config file.
@@ -26,18 +25,110 @@ the [Customizing a Theme][customize] section below.
 ### mkdocs
 
 The default theme, which was built as a custom [Bootstrap] theme, supports most
-every feature of MkDocs. It only supports the default
-[theme configuration options].
+every feature of MkDocs.
 
-![mkdocs](/img/mkdocs.png)
+![mkdocs](../img/mkdocs.png)
+
+In addition to the default [theme configuration options], the `mkdocs` theme
+supports the following options:
+
+* __`highlightjs`__: Enables highlighting of source code in code blocks using
+  the [highlight.js] JavaScript library. Default: `True`.
+
+* __`hljs_style`__: The highlight.js library provides 79 different [styles]
+  (color variations) for highlighting source code in code blocks. Set this to
+  the name of the desired style. Default: `github`.
+
+* __`hljs_languages`__: By default, highlight.js only supports 23 common
+  languages. List additional languages here to include support for them.
+
+        theme:
+            name: mkdocs
+            highlightjs: true
+            hljs_languages:
+                - yaml
+                - rust
+
+* __`shortcuts`__: Defines keyboard shortcut keys.
+
+        theme:
+            name: mkdocs
+            shortcuts:
+                help: 191    # ?
+                next: 78     # n
+                previous: 80 # p
+                search: 83   # s
+
+    All values much be numeric key codes. It is best to use keys which are
+    available on all keyboards. You may use <https://keycode.info/> to determine
+    the key code for a given key.
+
+    * __`help`__: Display a help modal which lists the keyboard shortcuts.
+      Default: `191` (&quest;)
+
+    * __`next`__: Navigate to the "next" page. Default: `78` (n)
+
+    * __`previous`__: Navigate to the "previous" page. Default: `80` (p)
+
+    * __`search`__: Display the search modal. Default: `83` (s)
+
+* __`navigation_depth`__: The maximum depth of the navigation tree in the
+  sidebar. Default: `2`.
+
+* __`nav_style`__: This adjusts the visual style for the top navigation bar; by
+  default, this is set to `primary` (the default), but it can also be set to
+  `dark` or `light`.
+
+        theme:
+            name: mkdocs
+            nav_style: dark
+
+[styles]: https://highlightjs.org/static/demo/
 
 ### readthedocs
 
-A clone of the default theme used by the [Read the Docs] service. This theme
-only supports features in its parent theme and does not support any MkDocs
-[theme configuration options] in addition to the defaults.
+A clone of the default theme used by the [Read the Docs] service, which offers
+the same restricted feature-set as its parent theme. Like its parent theme, only
+two levels of navigation are supported.
 
-![ReadTheDocs](http://docs.readthedocs.io/en/latest/_images/screen_mobile.png)
+![ReadTheDocs](../img/readthedocs.png)
+
+In addition to the default [theme configuration options], the `readthedocs`
+theme supports the following options:
+
+* __`highlightjs`__: Enables highlighting of source code in code blocks using
+  the [highlight.js] JavaScript library. Default: `True`.
+
+* __`hljs_languages`__: By default, highlight.js only supports 23 common
+  languages. List additional languages here to include support for them.
+
+        theme:
+            name: readthedocs
+            highlightjs: true
+            hljs_languages:
+                - yaml
+                - rust
+
+* __`include_homepage_in_sidebar`__: Lists the homepage in the sidebar menu. As
+  MkDocs requires that the homepage be listed in the `nav` configuration
+  option, this setting allows the homepage to be included or excluded from
+  the sidebar. Note that the site name/logo always links to the homepage.
+  Default: `True`.
+
+* __`prev_next_buttons_location`__: One of `bottom`, `top`, `both` , or `none`.
+  Displays the “Next” and “Previous” buttons accordingly. Default: `bottom`.
+
+* __`navigation_depth`__: The maximum depth of the navigation tree in the
+  sidebar. Default: `4`.
+
+* __`collapse_navigation`__: Only include the page section headers in the
+  sidebar for the current page. Default: `True`.
+
+* __`titles_only`__: Only include page titles in the sidebar, excluding all
+  section headers for all pages. Default: `False`.
+
+* __`sticky_navigation`__: If True, causes the sidebar to scroll with the main
+  page content as you scroll the page. Default: `True`.
 
 ### Third Party Themes
 
@@ -138,7 +229,7 @@ And then point your `mkdocs.yml` configuration file at the new directory:
 ```yaml
 theme:
     name: mkdocs
-    custom_dir: custom_theme
+    custom_dir: custom_theme/
 ```
 
 To override the 404 error page ("file not found"), add a new template file named
@@ -185,13 +276,13 @@ template would contain the following:
 ```django
 {% extends "base.html" %}
 
-{% block title %}
+{% block htmltitle %}
 <title>Custom title goes here</title>
 {% endblock %}
 ```
 
-In the above example, the title block defined in your custom `main.html` file
-will be used in place of the default title block defined in the parent theme.
+In the above example, the `htmltitle` block defined in your custom `main.html` file
+will be used in place of the default `htmltitle` block defined in the parent theme.
 You may re-define as many blocks as you desire, as long as those blocks are
 defined in the parent. For example, you could replace the Google Analytics
 script with one for a different service or replace the search feature with your
@@ -208,7 +299,7 @@ following blocks:
 * `extrahead`: An empty block in the `<head>` to insert custom tags/scripts/etc.
 * `site_name`: Contains the site name in the navigation bar.
 * `site_nav`: Contains the site navigation in the navigation bar.
-* `search_box`: Contains the search box in the navigation bar.
+* `search_button`: Contains the search box in the navigation bar.
 * `next_prev`: Contains the next and previous buttons in the navigation bar.
 * `repo`: Contains the repository link in the navigation bar.
 * `content`: Contains the page content and table of contents for the page.
@@ -260,22 +351,23 @@ any additional CSS files included in the `custom_dir`.
 
 [browse source]: https://github.com/mkdocs/mkdocs/tree/master/mkdocs/themes/mkdocs
 [built-in themes]: #built-in-themes
-[Bootstrap]: http://getbootstrap.com/
-[theme configuration options]: configuration.md#theme
+[Bootstrap]: https://getbootstrap.com/
+[theme configuration options]: ./configuration.md#theme
 [Read the Docs]: https://readthedocs.org/
 [community wiki]: https://github.com/mkdocs/mkdocs/wiki/MkDocs-Themes
 [custom theme]: ./custom-themes.md
 [customize]: #customizing-a-theme
 [docs_dir]: #using-the-docs_dir
-[documentation directory]: ./configuration/#docs_dir
+[documentation directory]: ./configuration.md#docs_dir
 [extra_css]: ./configuration.md#extra_css
 [extra_javascript]: ./configuration.md#extra_javascript
 [Jinja documentation]: http://jinja.pocoo.org/docs/dev/templates/#template-inheritance
 [mkdocs]: #mkdocs
 [ReadTheDocs]: ./deploying-your-docs.md#readthedocs
 [Template Variables]: ./custom-themes.md#template-variables
-[custom_dir]: ./configuration/#custom_dir
-[name]: ./configuration/#name
+[custom_dir]: ./configuration.md#custom_dir
+[name]: ./configuration.md#name
 [third party themes]: #third-party-themes
 [super block]: http://jinja.pocoo.org/docs/dev/templates/#super-blocks
 [base_url]: ./custom-themes.md#base_url
+[highlight.js]: https://highlightjs.org/

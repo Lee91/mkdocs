@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """
 Standalone file utils.
 
@@ -7,37 +5,19 @@ Nothing in this module should have an knowledge of config or the layout
 and structure of the site and pages in the site.
 """
 
-from __future__ import unicode_literals
 
 import logging
 import os
 import pkg_resources
 import shutil
 import re
-import sys
 import yaml
 import fnmatch
+import posixpath
+from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from mkdocs import exceptions
-
-try:                                                        # pragma: no cover
-    from urllib.parse import urlparse, urlunparse, urljoin  # noqa
-    from urllib.request import pathname2url                 # noqa
-    from collections import UserDict                        # noqa
-except ImportError:                                         # pragma: no cover
-    from urlparse import urlparse, urlunparse, urljoin      # noqa
-    from urllib import pathname2url                         # noqa
-    from UserDict import UserDict                           # noqa
-
-
-PY3 = sys.version_info[0] == 3
-
-if PY3:                         # pragma: no cover
-    string_types = str,         # noqa
-    text_type = str             # noqa
-else:                           # pragma: no cover
-    string_types = basestring,  # noqa
-    text_type = unicode         # noqa
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +35,7 @@ def yaml_load(source, loader=yaml.Loader):
     Wrap PyYaml's loader so we can extend it to suit our needs.
 
     Load all strings as unicode.
-    http://stackoverflow.com/a/2967461/3609487
+    https://stackoverflow.com/a/2967461/3609487
     """
 
     def construct_yaml_str(self, node):
@@ -98,6 +78,44 @@ def modified_time(file_path):
         return os.path.getmtime(file_path)
     else:
         return 0.0
+
+
+def get_build_timestamp():
+    """
+    Returns the number of seconds since the epoch.
+
+    Support SOURCE_DATE_EPOCH environment variable for reproducible builds.
+    See https://reproducible-builds.org/specs/source-date-epoch/
+    """
+    source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+    if source_date_epoch is None:
+        return int(datetime.now(timezone.utc).timestamp())
+
+    return int(source_date_epoch)
+
+
+def get_build_datetime():
+    """
+    Returns an aware datetime object.
+
+    Support SOURCE_DATE_EPOCH environment variable for reproducible builds.
+    See https://reproducible-builds.org/specs/source-date-epoch/
+    """
+    source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+    if source_date_epoch is None:
+        return datetime.now(timezone.utc)
+
+    return datetime.fromtimestamp(int(source_date_epoch), timezone.utc)
+
+
+def get_build_date():
+    """
+    Returns the displayable date string.
+
+    Support SOURCE_DATE_EPOCH environment variable for reproducible builds.
+    See https://reproducible-builds.org/specs/source-date-epoch/
+    """
+    return get_build_datetime().strftime('%Y-%m-%d')
 
 
 def reduce_list(data_set):
@@ -153,41 +171,6 @@ def clean_directory(directory):
             os.unlink(path)
 
 
-def copy_media_files(from_dir, to_dir,
-                     exclude=['*{0}'.format(x) for x in markdown_extensions], dirty=False):
-    """
-    Recursively copy all files except markdown and exclude[ed] files into another directory.
-
-    `exclude` accepts a list of Unix shell-style wildcards (`['*.py', '*.pyc']`).
-
-    Note that `exclude` only operates on file names, not directories.
-    """
-    for (source_dir, dirnames, filenames) in os.walk(from_dir, followlinks=True):
-        relative_path = os.path.relpath(source_dir, from_dir)
-        output_dir = os.path.normpath(os.path.join(to_dir, relative_path))
-
-        # Filter file names using Unix pattern matching
-        # Always filter file names starting with a '.'
-        exclude_patterns = ['.*']
-        exclude_patterns.extend(exclude or [])
-        for pattern in exclude_patterns:
-            filenames = [f for f in filenames if not fnmatch.fnmatch(f, pattern)]
-
-        # Filter the dirnames that start with a '.' and update the list in
-        # place to prevent us walking these.
-        dirnames[:] = [d for d in dirnames if not d.startswith('.')]
-
-        for filename in filenames:
-            source_path = os.path.join(source_dir, filename)
-            output_path = os.path.join(output_dir, filename)
-
-            # Do not copy when using --dirty if the file has not been modified
-            if dirty and (modified_time(source_path) < modified_time(output_path)):
-                continue
-
-            copy_file(source_path, output_path)
-
-
 def get_html_path(path):
     """
     Map a source file path to an output html path.
@@ -220,38 +203,13 @@ def get_url_path(path, use_directory_urls=True):
     return url
 
 
-def is_homepage(path):
-    return os.path.splitext(path)[0] == 'index'
-
-
 def is_markdown_file(path):
     """
     Return True if the given file path is a Markdown file.
 
-    http://superuser.com/questions/249436/file-extension-for-markdown-files
+    https://superuser.com/questions/249436/file-extension-for-markdown-files
     """
-    return any(fnmatch.fnmatch(path.lower(), '*{0}'.format(x)) for x in markdown_extensions)
-
-
-def is_css_file(path):
-    """
-    Return True if the given file path is a CSS file.
-    """
-    ext = os.path.splitext(path)[1].lower()
-    return ext in [
-        '.css',
-    ]
-
-
-def is_javascript_file(path):
-    """
-    Return True if the given file path is a Javascript file.
-    """
-    ext = os.path.splitext(path)[1].lower()
-    return ext in [
-        '.js',
-        '.javascript'
-    ]
+    return any(fnmatch.fnmatch(path.lower(), '*{}'.format(x)) for x in markdown_extensions)
 
 
 def is_html_file(path):
@@ -287,85 +245,49 @@ def is_error_template(path):
     return bool(_ERROR_TEMPLATE_RE.match(path))
 
 
-def create_media_urls(nav, path_list):
+def get_relative_url(url, other):
     """
-    Return a list of URLs that have been processed correctly for inclusion in
-    a page.
+    Return given url relative to other.
     """
-    final_urls = []
+    if other != '.':
+        # Remove filename from other url if it has one.
+        parts = posixpath.split(other)
+        other = parts[0] if '.' in parts[1] else other
+    relurl = posixpath.relpath(url, other)
+    return relurl + '/' if url.endswith('/') else relurl
+
+
+def normalize_url(path, page=None, base=''):
+    """ Return a URL relative to the given page or using the base. """
+    path = path_to_url(path or '.')
+    # Allow links to be fully qualified URL's
+    parsed = urlparse(path)
+    if parsed.scheme or parsed.netloc or path.startswith(('/', '#')):
+        return path
+
+    # We must be looking at a local path.
+    if page is not None:
+        return get_relative_url(path, page.url)
+    else:
+        return posixpath.join(base, path)
+
+
+def create_media_urls(path_list, page=None, base=''):
+    """
+    Return a list of URLs relative to the given page or using the base.
+    """
+    urls = []
 
     for path in path_list:
-        # Allow links to fully qualified URL's
-        parsed = urlparse(path)
-        if parsed.netloc:
-            final_urls.append(path)
-            continue
-        # We must be looking at a local path.
-        url = path_to_url(path)
-        relative_url = '%s/%s' % (nav.url_context.make_relative('/').rstrip('/'), url)
-        final_urls.append(relative_url)
+        urls.append(normalize_url(path, page, base))
 
-    return final_urls
-
-
-def create_relative_media_url(nav, url):
-    """
-    For a current page, create a relative url based on the given URL.
-
-    On index.md (which becomes /index.html):
-        image.png -> ./image.png
-        /image.png -> ./image.png
-
-    On sub/page.md (which becomes /sub/page/index.html):
-        image.png -> ../image.png
-        /image.png -> ../../image.png
-
-    On sub/index.md (which becomes /sub/index.html):
-        image.png -> ./image.png
-        /image.png -> ./image.png
-
-    """
-
-    # Allow links to fully qualified URL's
-    parsed = urlparse(url)
-    if parsed.netloc:
-        return url
-
-    # If the URL we are looking at starts with a /, then it should be
-    # considered as absolute and will be 'relative' to the root.
-    if url.startswith('/'):
-        base = '/'
-        url = url[1:]
-    else:
-        base = nav.url_context.base_path
-
-    relative_base = nav.url_context.make_relative(base)
-    if relative_base == "." and url.startswith("./"):
-        relative_url = url
-    else:
-        relative_url = '%s/%s' % (relative_base, url)
-
-    # TODO: Fix this, this is a hack. Relative urls are not being calculated
-    # correctly for images in the same directory as the markdown. I think this
-    # is due to us moving it into a directory with index.html, but I'm not sure
-    # win32 platform uses backslash "\". eg. "\level1\level2"
-    notindex = re.match(r'.*(?:\\|/)index.md$', nav.file_context.current_file) is None
-
-    if notindex and nav.url_context.base_path != '/' and relative_url.startswith("./"):
-        relative_url = ".%s" % relative_url
-
-    return relative_url
+    return urls
 
 
 def path_to_url(path):
     """Convert a system path to a URL."""
 
-    if os.path.sep == '/':
-        return path
-
-    if sys.version_info < (3, 0):
-        path = path.encode('utf8')
-    return pathname2url(path)
+    return '/'.join(path.split('\\'))
 
 
 def get_theme_dir(name):
@@ -385,7 +307,7 @@ def get_themes():
 
         if theme.name in builtins and theme.dist.key != 'mkdocs':
             raise exceptions.ConfigurationError(
-                "The theme {0} is a builtin theme but {1} provides a theme "
+                "The theme {} is a builtin theme but {} provides a theme "
                 "with the same name".format(theme.name, theme.dist.key))
 
         elif theme.name in themes:
@@ -405,19 +327,8 @@ def get_theme_names():
     return get_themes().keys()
 
 
-def filename_to_title(filename):
-
-    title = os.path.splitext(filename)[0]
-    title = title.replace('-', ' ').replace('_', ' ')
-    # Capitalize if the filename was all lowercase, otherwise leave it as-is.
-    if title.lower() == title:
-        title = title.capitalize()
-
-    return title
-
-
 def dirname_to_title(dirname):
-
+    """ Return a page tile obtained from a directory name. """
     title = dirname
     title = title.replace('-', ' ').replace('_', ' ')
     # Capitalize if the dirname was all lowercase, otherwise leave it as-is.
@@ -428,22 +339,22 @@ def dirname_to_title(dirname):
 
 
 def get_markdown_title(markdown_src):
-        """
-        Get the title of a Markdown document. The title in this case is considered
-        to be a H1 that occurs before any other content in the document.
-        The procedure is then to iterate through the lines, stopping at the first
-        non-whitespace content. If it is a title, return that, otherwise return
-        None.
-        """
+    """
+    Get the title of a Markdown document. The title in this case is considered
+    to be a H1 that occurs before any other content in the document.
+    The procedure is then to iterate through the lines, stopping at the first
+    non-whitespace content. If it is a title, return that, otherwise return
+    None.
+    """
 
-        lines = markdown_src.replace('\r\n', '\n').replace('\r', '\n').split('\n')
-        while lines:
-            line = lines.pop(0).strip()
-            if not line.strip():
-                continue
-            if not line.startswith('# '):
-                return
-            return line.lstrip('# ')
+    lines = markdown_src.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    while lines:
+        line = lines.pop(0).strip()
+        if not line.strip():
+            continue
+        if not line.startswith('# '):
+            return
+        return line.lstrip('# ')
 
 
 def find_or_create_node(branch, key):
@@ -490,3 +401,17 @@ def nest_paths(paths):
         branch.append(path)
 
     return nested
+
+
+class WarningFilter(logging.Filter):
+    """ Counts all WARNING level log messages. """
+    count = 0
+
+    def filter(self, record):
+        if record.levelno == logging.WARNING:
+            self.count += 1
+        return True
+
+
+# A global instance to use throughout package
+warning_filter = WarningFilter()
